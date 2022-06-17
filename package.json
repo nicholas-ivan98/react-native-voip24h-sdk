@@ -1,7 +1,7 @@
 {
   "name": "react-native-voip24h-sdk",
   "title": "React Native Voip24h Sdk",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "TODO",
   "main": "index.js",
   "files": [
@@ -9,6 +9,7 @@
     "android",
     "index.js",
     "ios",
+    "src",
     "react-native-voip24h-sdk.podspec",
     "third_party_podspecs/linphone-sdk-novideo.podspec"
   ],
