@@ -9,7 +9,7 @@
 - [Cài đặt](#cài-đặt)
 - [Sử dụng](#sử-dụng)
 - [Graph](#graph)
-- [Callkit](#callkit)
+- [CallKit](#callkit)
 
 ## Tính năng
 - Graph:
@@ -121,7 +121,8 @@ Thêm third party library:
         use_frameworks!
         target 'Your Project' do
             ...
-            # use_flipper!() // Comment dòng use_flipper!()
+            # Comment dòng use_flipper!()
+            # use_flipper!()
             pod 'linphone-sdk-novideo', :podspec => '../node_modules/react-native-voip24h-sdk/third_party_podspecs/linphone-sdk-novideo.podspec'
         end
         ```
@@ -156,14 +157,14 @@ console.log(MethodRequest);
     - Function: GraphModule.sendRequest(method, endpoint, token, params, callback)
     - Params function:
         - method: là các method như MethodRequest.POST, MethodRequest.GET,...
-        - endpoint: là các đường dẫn của URL như "call/find", "call/findone", "phonebook/find",...
+        - endpoint: là các chuỗi ở cuối đường dẫn của URL như "call/find", "call/findone", "phonebook/find",...
         - token: là access token
         - params: là data body dạng object như { offset: 0, limit: 25 }
         - callback: trả kết quả ra dạng jsonObject. 
     - Để lấy data sử dụng funtion GraphModule.getData(jsonObject), để lấy list data sử dụng function GraphModule.getListData(jsonObject) đối với các api request lấy danh sách.
     
 
-## Callkit
+## CallKit
 - Khởi tạo SipModule:
     ```
     SipModule.initializeModule();
@@ -262,28 +263,28 @@ console.log(MethodRequest);
         onMissed: (body) => console.log(`onMissed -> callee: ${body.callee} - Total missed: ${body.totalMissed}`),
         onReleased: () => console.log("onReleased"),
         onError: (body) => console.log(`onError -> message: ${body.message}`)
-      }
+    }
     
-      React.useEffect(() => {
+    React.useEffect(() => {
         let eventEmitter = new NativeEventEmitter(SipModule)
         const eventListeners = Object.entries(callbacks).map(
-          ([event, callback]) => {
-            return eventEmitter.addListener(event, callback)
-          }
+            ([event, callback]) => {
+                return eventEmitter.addListener(event, callback)
+            }
         )
-        return () => {
-          eventListeners.forEach((item) => {
-            item.remove();
-          })
-        };
-      }, []);
+    return () => {
+      eventListeners.forEach((item) => {
+        item.remove();
+      })
+    };
+    }, []);
     ```
 
 ## License
 ```
 The MIT License (MIT)
 
-Copyright (c) 2014 baoyongzhang
+Copyright (c) 2022 VOIP24H
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
