@@ -1,6 +1,6 @@
 # React Native Voip24h-SDK 
 
-[![NPM version](https://img.shields.io/npm/v/rn-voip24h-sdk.svg?style=flat)](https://www.npmjs.com/package/rn-voip24h-sdk)
+[![NPM version](https://img.shields.io/npm/v/react-native-voip24h-sdk.svg?style=flat)](https://www.npmjs.com/package/react-native-voip24h-sdk)
 
 ## Mục lục
 
@@ -272,11 +272,11 @@ console.log(MethodRequest);
                 return eventEmitter.addListener(event, callback)
             }
         )
-    return () => {
-      eventListeners.forEach((item) => {
-        item.remove();
-      })
-    };
+        return () => {
+          eventListeners.forEach((item) => {
+            item.remove();
+          })
+        };
     }, []);
     ```
 
