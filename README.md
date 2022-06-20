@@ -52,41 +52,13 @@ Sử dụng npm:
 ```bash
 $ npm install react-native-voip24h-sdk
 ```
-Linking Libraries:
--  Cách 1: Automatic linking:
-    ```bash
-    $ react-native link react-native-voip24h-sdk
-    ```
-- Cách 2: Manual linking:
-    - Android: 
-        - Trong file `settings.gradle`
-            ```
-            include ':react-native-voip24h-sdk'
-            project(':react-native-voip24h-sdk').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-voip24h-sdk/android')
-            ```
-        - Trong file `app/build.gradle`
-            ```
-            dependencies {
-                ...
-                implementation project(':react-native-voip24h-sdk')
-            }
-            ```
-    - IOS: 
-        - Trong folder `ios/Podfile`
-            ```
-            target 'Your Project' do
-                ...
-                pod 'react-native-voip24h-sdk', :path => '../node_modules/react-native-voip24h-sdk'
-            end
-            ```
-        - Trong folder `ios` mở terminal, nhập dòng lệnh:
-            ```bash
-            $ pod install
-            // or
-            $pod update
-            ```
-Thêm third party library:
-- Android:
+Linking module:
+- Android: 
+    - Trong file `settings.gradle`
+        ```
+        include ':react-native-voip24h-sdk'
+        project(':react-native-voip24h-sdk').projectDir = new File(rootProject.projectDir, '../node_modules/react-native-voip24h-sdk/android')
+        ```
     - Trong `build.gradle`:
         ```
         allprojects {
@@ -102,7 +74,7 @@ Thêm third party library:
             }
         }
         ```
-    - Trong `app/build.gradle`:
+    - Trong file `app/build.gradle`
         ```
         android {
             ...
@@ -113,8 +85,13 @@ Thêm third party library:
                 pickFirst 'lib/armeabi-v7a/libc++_shared.so'
             }
         }
+        
+        dependencies {
+            ...
+            implementation project(':react-native-voip24h-sdk')
+        }
         ```
-- IOS:
+- IOS: 
     - Trong `ios/Podfile`:
         ```
         ...
@@ -128,9 +105,8 @@ Thêm third party library:
         ```
     - Trong folder `ios` mở terminal, nhập dòng lệnh:
         ```bash
+        $ rm -rf Pods/
         $ pod install
-        // or
-        $pod update
         ```
     > Note: Từ react-native vesion > 0.63.0. Nếu build app trên platform ios mà bị lỗi Swift Compiler error: folly/folly-config.h not found -> Could not build Objective-C module 'linphone'.
     > -- Fixing: Trong file Pods/RCT-Folly/folly/portability/Config.h, comment dòng #include <folly/folly-config.h>
@@ -157,9 +133,9 @@ console.log(MethodRequest);
     - Function: GraphModule.sendRequest(method, endpoint, token, params, callback)
     - Params function:
         - method: là các method như MethodRequest.POST, MethodRequest.GET,...
-        - endpoint: là các chuỗi ở cuối đường dẫn của URL như "call/find", "call/findone", "phonebook/find",...
+        - endpoint: là các chuỗi ở cuối đường dẫn của URL  Request, ví dụ: "call/find", "call/findone", "phonebook/find",...
         - token: là access token
-        - params: là data body dạng object như { offset: 0, limit: 25 }
+        - params: là data body dạng object, ví dụ: { offset: 0, limit: 25 }
         - callback: trả kết quả ra dạng jsonObject. 
     - Để lấy data sử dụng funtion GraphModule.getData(jsonObject), để lấy list data sử dụng function GraphModule.getListData(jsonObject) đối với các api request lấy danh sách.
     
