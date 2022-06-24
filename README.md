@@ -8,13 +8,10 @@
 - [Yêu cầu](#yêu-cầu)
 - [Cài đặt](#cài-đặt)
 - [Sử dụng](#sử-dụng)
-- [Graph](#graph)
 - [CallKit](#callkit)
+- [Graph](#graph)
 
 ## Tính năng
-- Graph:
-    - Lấy access token
-    - Request API từ: https://docs-sdk.voip24h.vn/
 - Callkit:
     - Đăng nhập/Đăng xuất/Refresh kết nối tài khoản SIP
     - Gọi đi/Nhận cuộc gọi đến 
@@ -22,9 +19,14 @@
     - Pause/Resume cuộc gọi
     - Hold/Unhold cuộc gọi
     - Bật/Tắt mic
+    - Lấy trạng thái mic
     - Bật/Tắt loa
+    - Lấy trạng thái loa
     - Transfer cuộc gọi
     - Send DTMF
+- Graph:
+    - Lấy access token
+    - Request API từ: https://docs-sdk.voip24h.vn/
 
 ## Yêu cầu
 - OS Platform:
@@ -121,25 +123,6 @@ console.log(SipModule);
 console.log(MethodRequest);
 ```
 
-## Graph
-- Lấy access token: key và security certificate(secert) do `Voip24h` cung cấp
-    ```
-    GraphModule.getAccessToken(key, secert, {
-        success: (statusCode, message, oauth) => console.log(oauth.token),
-        error: (errorCode, message) => console.log(`Error code: ${errorCode}, Message: ${message}`)
-    });
-    ```
-- Request API: phương thức, endpoint, data body tham khảo từ docs https://docs-sdk.voip24h.vn/
-    - Function: GraphModule.sendRequest(method, endpoint, token, params, callback)
-    - Params function:
-        - method: là các method như MethodRequest.POST, MethodRequest.GET,...
-        - endpoint: là các chuỗi ở cuối đường dẫn của URL  Request, ví dụ: "call/find", "call/findone", "phonebook/find",...
-        - token: là access token
-        - params: là data body dạng object, ví dụ: { offset: 0, limit: 25 }
-        - callback: trả kết quả ra dạng jsonObject. 
-    - Để lấy data sử dụng funtion GraphModule.getData(jsonObject), để lấy list data sử dụng function GraphModule.getListData(jsonObject) đối với các api request lấy danh sách.
-    
-
 ## CallKit
 - Khởi tạo SipModule:
     ```
@@ -181,7 +164,7 @@ console.log(MethodRequest);
     ```
 - Transfer cuộc gọi:
     ```
-    SipModule.transfer(phoneNumber);
+    SipModule.transfer("extension");
     ```
 - Lấy call id:
     ```
@@ -211,6 +194,12 @@ console.log(MethodRequest);
         })
         .catch((e) => console.log("Something has gone wrong"))
     ```
+- Trạng thái mic
+    ```
+    SipModule.isMicEnabled()
+        .then((result) => console.log(`Mic enabled: ${result}`))
+        .catch((error) => console.log(error));
+    ```
 - Bật/Tắt loa:
     ```
     SipModule.toggleSpeaker()
@@ -222,6 +211,12 @@ console.log(MethodRequest);
         })
         .catch((e) => console.log("Something has gone wrong"))
     ```
+- Trạng thái loa
+    ```
+    SipModule.isSpeakerEnabled()
+        .then((result) => console.log(`Speaker enabled: ${result}`))
+        .catch((error) => console.log(error));
+    ```
 - Send DTMF:
     ```
     SipModule.sendDtmf("number#");
@@ -229,16 +224,13 @@ console.log(MethodRequest);
 - Register event listener SIP:
     ```
     const callbacks =  {
-        onAccountRegistrationStateChanged: (body) => console.log(`onAccountRegistrationStateChanged -> registrationState: ${body.registrationState} - message: ${body.message}`),
-        onIncomingReceived: (body) => console.log(`onIncomingReceived -> callee: ${body.callee}`),
-        onOutgoingInit: () => console.log("onOutgoingInit"),
-        onOutgoingProgress: (body) => console.log(`onOutgoingProgress -> callId: ${body.callId}`),
-        onOutgoingRinging: (body) => console.log(`onOutgoingRinging -> callId: ${body.callId}`),
-        onStreamsRunning: (body) => console.log(`onStreamsRunning -> callId: ${body.callId} - Callee: ${body.callee}`),
-        onPaused: () => console.log("onPaused"),
-        onMissed: (body) => console.log(`onMissed -> callee: ${body.callee} - Total missed: ${body.totalMissed}`),
-        onReleased: () => console.log("onReleased"),
-        onError: (body) => console.log(`onError -> message: ${body.message}`)
+        AccountRegistrationStateChanged: (body) => console.log(`AccountRegistrationStateChanged -> registrationState: ${body.registrationState} - message: ${body.message}`),
+        Ring: (body) => console.log(`Ring -> extension: ${body.extension} - phone: ${body.phone} - type: ${body.type}`),
+        Up: (body) => console.log("Up"),
+        Paused: () => console.log("Paused"),
+        Missed: (body) => console.log(`Missed -> phone: ${body.phone} - Total missed: ${body.totalMissed}`),
+        Hangup: () => console.log("Hangup"),
+        Error: (body) => console.log(`Error -> message: ${body.message}`)
     }
     
     React.useEffect(() => {
@@ -255,6 +247,24 @@ console.log(MethodRequest);
         };
     }, []);
     ```
+
+## Graph
+- Lấy access token: key và security certificate(secert) do `Voip24h` cung cấp
+    ```
+    GraphModule.getAccessToken(key, secert, {
+        success: (statusCode, message, oauth) => console.log(oauth.token),
+        error: (errorCode, message) => console.log(`Error code: ${errorCode}, Message: ${message}`)
+    });
+    ```
+- Request API: phương thức, endpoint, data body tham khảo từ docs https://docs-sdk.voip24h.vn/
+    - Function: GraphModule.sendRequest(method, endpoint, token, params, callback)
+    - Params function:
+        - method: là các method như MethodRequest.POST, MethodRequest.GET,...
+        - endpoint: là các chuỗi ở cuối đường dẫn của URL  Request, ví dụ: "call/find", "call/findone", "phonebook/find",...
+        - token: là access token
+        - params: là data body dạng object, ví dụ: { offset: 0, limit: 25 }
+        - callback: trả kết quả ra dạng jsonObject. 
+    - Để lấy data sử dụng funtion GraphModule.getData(jsonObject), để lấy list data sử dụng function GraphModule.getListData(jsonObject) đối với các api request lấy danh sách.
 
 ## License
 ```

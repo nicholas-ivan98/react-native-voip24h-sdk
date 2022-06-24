@@ -195,21 +195,30 @@ const App: () => Node = () => {
     .catch((error) => console.log(error))
   };
 
+  const GetMicEnable = () => {
+    SipModule.isMicEnabled()
+    .then((result) => console.log(`Mic enabled: ${result}`))
+    .catch((error) => console.log(error));
+  };
+
+  const GetSpeakerEnable = () => {
+    SipModule.isSpeakerEnabled()
+    .then((result) => console.log(`Speaker enabled: ${result}`))
+    .catch((error) => console.log(error));
+  }
+
   // console.log(NativeModules.Voip24hSdk)
 
   SipModule.initializeModule();
 
   const callbacks =  {
-    onAccountRegistrationStateChanged: (body) => console.log(`onAccountRegistrationStateChanged -> registrationState: ${body.registrationState} - message: ${body.message}`),
-    onIncomingReceived: (body) => console.log(`onIncomingReceived -> callee: ${body.callee}`),
-    onOutgoingInit: () => console.log("onOutgoingInit"),
-    onOutgoingProgress: (body) => console.log(`onOutgoingProgress -> callId: ${body.callId}`),
-    onOutgoingRinging: (body) => console.log(`onOutgoingRinging -> callId: ${body.callId}`),
-    onStreamsRunning: (body) => console.log(`onStreamsRunning -> callId: ${body.callId} - Callee: ${body.callee}`),
-    onPaused: () => console.log("onPaused"),
-    onMissed: (body) => console.log(`onMissed -> callee: ${body.callee} - Total missed: ${body.totalMissed}`),
-    onReleased: () => console.log("onReleased"),
-    onError: (body) => console.log(`onError -> message: ${body.message}`)
+    AccountRegistrationStateChanged: (body) => console.log(`AccountRegistrationStateChanged -> registrationState: ${body.registrationState} - message: ${body.message}`),
+    Ring: (body) => console.log(`Ring -> extension: ${body.extension} - phone: ${body.phone} - type: ${body.type}`),
+    Up: (body) => console.log("Up"),
+    Paused: () => console.log("Paused"),
+    Missed: (body) => console.log(`Missed -> phone: ${body.phone} - Total missed: ${body.totalMissed}`),
+    Hangup: () => console.log("Hangup"),
+    Error: (body) => console.log(`Error -> message: ${body.message}`)
   }
 
   React.useEffect(() => {
@@ -254,6 +263,8 @@ const App: () => Node = () => {
           <Button onPress={GetCallID} title="Get CallID"/>
           <Button onPress={GetMissedCall} title="Get Missed Calls"/>
           <Button onPress={GetSipRegistrationState} title="Get Sip Registration State"/>
+          <Button onPress={GetMicEnable} title="Get Mic Enable"/>
+          <Button onPress={GetSpeakerEnable} title="Get Speaker Enable"/>
 
           <Section title="Step One">
             Edit <Text style={styles.highlight}>App.js</Text> to change this

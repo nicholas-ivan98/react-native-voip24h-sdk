@@ -10,6 +10,10 @@ import org.linphone.core.*
 class Voip24hSdkModule(private val reactContext: ReactApplicationContext) :
     ReactContextBaseJavaModule(reactContext) {
 
+    enum class CallType(val value: String) {
+        inbound("inbound"), outbound("outbound")
+    }
+
     private lateinit var mCore: Core
     private val coreListener = object : CoreListenerStub() {
         override fun onAccountRegistrationStateChanged(
@@ -18,7 +22,7 @@ class Voip24hSdkModule(private val reactContext: ReactApplicationContext) :
             state: RegistrationState?,
             message: String
         ) {
-          sendEvent("onAccountRegistrationStateChanged", createParams("registrationState" to (state?.name ?: ""), "message" to message))
+          sendEvent("AccountRegistrationStateChanged", createParams("registrationState" to (state?.name ?: ""), "message" to message))
         }
 
         override fun onCallStateChanged(
@@ -30,25 +34,24 @@ class Voip24hSdkModule(private val reactContext: ReactApplicationContext) :
             when (state) {
                 Call.State.IncomingReceived -> {
                     Log.d(TAG, "IncomingReceived")
-                    val callee = call.remoteAddress.username ?: ""
-                    sendEvent("onIncomingReceived", createParams("callee" to callee))
+                    val extension = core.defaultAccount?.contactAddress?.username ?: ""
+                    val phone = call.remoteAddress.username ?: ""
+                    sendEvent("Ring", createParams("extension" to extension, "phone" to phone, "type" to CallType.inbound.value))
                 }
                 Call.State.OutgoingInit -> {
                     // First state an outgoing call will go through
                     Log.d(TAG, "OutgoingInit")
-                    sendEvent("onOutgoingInit", null)
                 }
                 Call.State.OutgoingProgress -> {
                     // First state an outgoing call will go through
                     Log.d(TAG, "OutgoingProgress")
-                    val callId = call.callLog.callId ?: ""
-                    sendEvent("onOutgoingProgress", createParams("callId" to callId))
+                    val extension = core.defaultAccount?.contactAddress?.username ?: ""
+                    val phone = call.remoteAddress.username ?: ""
+                    sendEvent("Ring", createParams("extension" to extension, "phone" to phone, "type" to CallType.outbound.value))
                 }
                 Call.State.OutgoingRinging -> {
                     // Once remote accepts, ringing will commence (180 response)
                     Log.d(TAG, "OutgoingRinging")
-                    val callId = call.callLog.callId ?: ""
-                    sendEvent("onOutgoingRinging", createParams("callId" to callId))
                 }
                 Call.State.Connected -> {
                     Log.d(TAG, "Connected")
@@ -59,17 +62,14 @@ class Voip24hSdkModule(private val reactContext: ReactApplicationContext) :
                     // or after the ICE negotiation completes
                     // Wait for the call to be connected before allowing a call update
                     Log.d(TAG, "StreamsRunning")
-                    val callId = call.callLog.callId ?: ""
-                    val callee = call.remoteAddress.username ?: ""
-                    sendEvent("onStreamsRunning", createParams("callId" to callId, "callee" to callee))
+                    sendEvent("Up", null)
                 }
                 Call.State.Paused -> {
                     Log.d(TAG, "Paused")
-                    sendEvent("onPaused", null)
+                    sendEvent("Paused", null)
                 }
                 Call.State.PausedByRemote -> {
                     Log.d(TAG, "PausedByRemote")
-                    sendEvent("onPausedByRemote", null)
                 }
                 Call.State.Updating -> {
                     // When we request a call update, for example when toggling video
@@ -84,15 +84,18 @@ class Voip24hSdkModule(private val reactContext: ReactApplicationContext) :
                         Log.d(TAG,"Missed")
                         val callee = call.remoteAddress.username ?: ""
                         val totalMissed = core.missedCallsCount.toString()
-                        sendEvent("onMissed", createParams("callee" to callee, "totalMissed" to totalMissed))
+                        sendEvent("Missed", createParams("phone" to callee, "totalMissed" to totalMissed))
                     } else {
                         Log.d(TAG, "Released")
-                        sendEvent("onReleased", null)
                     }
+                }
+                Call.State.End -> {
+                    Log.d(TAG, "End")
+                    sendEvent("Hangup", null)
                 }
                 Call.State.Error -> {
                     Log.d(TAG, "Error")
-                    sendEvent("onError", createParams("message" to message))
+                    sendEvent("Error", createParams("message" to message))
                 }
                 else -> {
                     Log.d(TAG, "Nothing")
@@ -323,32 +326,26 @@ class Voip24hSdkModule(private val reactContext: ReactApplicationContext) :
 
     @ReactMethod
     fun toggleMic(promise: Promise) {
-        try {
-            mCore.isMicEnabled = !mCore.isMicEnabled
-            promise.resolve(true)
-        } catch (e: Exception) {
-            promise.reject(e)
-        }
+        mCore.isMicEnabled = !mCore.isMicEnabled
+        promise.resolve(mCore.isMicEnabled)
     }
 
     @ReactMethod
     fun toggleSpeaker(promise: Promise) {
-        try {
-            val currentAudioDevice = mCore.currentCall?.outputAudioDevice
-            val speakerEnabled = currentAudioDevice?.type == AudioDevice.Type.Speaker
-            for (audioDevice in mCore.audioDevices) {
-                if (speakerEnabled && audioDevice.type == AudioDevice.Type.Earpiece) {
-                    mCore.currentCall?.outputAudioDevice = audioDevice
-                    return
-                } else if (!speakerEnabled && audioDevice.type == AudioDevice.Type.Speaker) {
-                    mCore.currentCall?.outputAudioDevice = audioDevice
-                    return
-                }
+        val currentAudioDevice = mCore.currentCall?.outputAudioDevice
+        val speakerEnabled = currentAudioDevice?.type == AudioDevice.Type.Speaker
+        for (audioDevice in mCore.audioDevices) {
+            if (speakerEnabled && audioDevice.type == AudioDevice.Type.Earpiece) {
+                mCore.currentCall?.outputAudioDevice = audioDevice
+                promise.resolve(false)
+                return
+            } else if (!speakerEnabled && audioDevice.type == AudioDevice.Type.Speaker) {
+                mCore.currentCall?.outputAudioDevice = audioDevice
+                promise.resolve(true)
+                return
             }
-            promise.resolve(true)
-        } catch (e: Exception) {
-            promise.reject(e)
         }
+        promise.resolve(true)
     }
 
     @ReactMethod
@@ -372,6 +369,18 @@ class Voip24hSdkModule(private val reactContext: ReactApplicationContext) :
         } ?: kotlin.run {
             promise.reject(Throwable("Register state not found"))
         }
+    }
+
+    @ReactMethod
+    fun isMicEnabled(promise: Promise) {
+        promise.resolve(mCore.isMicEnabled)
+    }
+
+    @ReactMethod
+    fun isSpeakerEnabled(promise: Promise) {
+        val currentAudioDevice = mCore.currentCall?.outputAudioDevice
+        val speakerEnabled = currentAudioDevice?.type == AudioDevice.Type.Speaker
+        promise.resolve(speakerEnabled)
     }
 
     private fun isMissed(callLog: CallLog?): Boolean {

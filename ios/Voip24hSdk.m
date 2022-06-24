@@ -59,4 +59,11 @@ RCT_EXTERN_METHOD(getSipRegistrationState:(RCTPromiseResolveBlock)resolve
 
 RCT_EXTERN_METHOD(getCallId:(RCTPromiseResolveBlock)resolve
                   withRejecter:(RCTPromiseRejectBlock)reject)
+
+RCT_EXTERN_METHOD(isMicEnabled:(RCTPromiseResolveBlock)resolve
+                  withRejecter:(RCTPromiseRejectBlock)reject)
+
+RCT_EXTERN_METHOD(isSpeakerEnabled:(RCTPromiseResolveBlock)resolve
+                  withRejecter:(RCTPromiseRejectBlock)reject)
+
 @end

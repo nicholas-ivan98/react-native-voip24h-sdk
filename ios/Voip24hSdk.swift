@@ -22,7 +22,7 @@ class Voip24hSdk: RCTEventEmitter {
     //    private var loudMic: AudioDevice?
     //    private var loudSpeaker: AudioDevice?
     //    private var microphone: AudioDevice?
-    private var isSpeakerEnabled: Bool = false
+    //    private var isSpeakerEnabled: Bool = false
     
     @objc
     override static func requiresMainQueueSetup() -> Bool {
@@ -31,7 +31,7 @@ class Voip24hSdk: RCTEventEmitter {
     
     @objc
     override func supportedEvents() -> [String]! {
-        return ["onAccountRegistrationStateChanged", "onIncomingReceived", "onOutgoingInit", "onOutgoingProgress", "onOutgoingRinging", "onStreamsRunning", "onPaused", "onPausedByRemote", "onMissed", "onReleased", "onError"]
+        return ["AccountRegistrationStateChanged", "Ring", "Up", "Hangup", "Paused", "Missed", "Error"]
     }
     
     private func deleteSipAccount() {
@@ -70,22 +70,21 @@ class Voip24hSdk: RCTEventEmitter {
                         // but we don't need it right now, so better to leave it deactivated.
                         // try! call.terminate()
                         NSLog("IncomingReceived")
-                        let callee = call.remoteAddress?.username ?? ""
-                        self.sendEvent(withName: "onIncomingReceived", body: ["callee": callee])
+                        let ext = core.defaultAccount?.contactAddress?.username ?? ""
+                        let phone = call.remoteAddress?.username ?? ""
+                        self.sendEvent(withName: "Ring", body: ["extension": ext, "phone": phone, "type": CallType.inbound.rawValue])
                     case .OutgoingInit:
                         // First state an outgoing call will go through
                         NSLog("OutgoingInit")
-                        self.sendEvent(withName: "onOutgoingInit", body: nil)
                     case .OutgoingProgress:
                         // First state an outgoing call will go through
                         NSLog("OutgoingProgress")
-                        let callId = call.callLog?.callId ?? ""
-                        self.sendEvent(withName: "onOutgoingProgress", body: ["callId": callId])
+                        let ext = core.defaultAccount?.contactAddress?.username ?? ""
+                        let phone = call.remoteAddress?.username ?? ""
+                        self.sendEvent(withName: "Ring", body: ["extension": ext, "phone": phone, "type": CallType.outbound.rawValue])
                     case .OutgoingRinging:
                         // Once remote accepts, ringing will commence (180 response)
                         NSLog("OutgoingRinging")
-                        let callId = call.callLog?.callId ?? ""
-                        self.sendEvent(withName: "onOutgoingRinging", body: ["callId": callId])
                     case .Connected:
                         NSLog("Connected")
                     case .StreamsRunning:
@@ -94,15 +93,12 @@ class Voip24hSdk: RCTEventEmitter {
                         // or after the ICE negotiation completes
                         // Wait for the call to be connected before allowing a call update
                         NSLog("StreamsRunning")
-                        let callId = call.callLog?.callId ?? ""
-                        let callee = call.remoteAddress?.username ?? ""
-                        self.sendEvent(withName: "onStreamsRunning", body: ["callId": callId, "callee": callee])
+                        self.sendEvent(withName: "Up", body: nil)
                     case .Paused:
                         NSLog("Paused")
-                        self.sendEvent(withName: "onPaused", body: nil)
+                        self.sendEvent(withName: "Paused", body: nil)
                     case .PausedByRemote:
                         NSLog("PausedByRemote")
-                        self.sendEvent(withName: "onPausedByRemote", body: nil)
                     case .Updating:
                         // When we request a call update, for example when toggling video
                         NSLog("Updating")
@@ -113,14 +109,16 @@ class Voip24hSdk: RCTEventEmitter {
                             NSLog("Missed")
                             let callee = call.remoteAddress?.username ?? ""
                             let totalMissed = core.missedCallsCount
-                            self.sendEvent(withName: "onMissed", body: ["callee": callee, "totalMissed": totalMissed])
+                            self.sendEvent(withName: "Missed", body: ["phone": callee, "totalMissed": totalMissed])
                         } else {
                             NSLog("Released", "")
-                            self.sendEvent(withName: "onReleased", body: nil)
                         }
+                    case .End:
+                        NSLog("End", "")
+                        self.sendEvent(withName: "Hangup", body: nil)
                     case .Error:
                         NSLog("Error")
-                        self.sendEvent(withName: "onError", body: ["message": message])
+                        self.sendEvent(withName: "Error", body: ["message": message])
                     default:
                         NSLog("Nothing")
                     }
@@ -129,7 +127,7 @@ class Voip24hSdk: RCTEventEmitter {
                 // self.sendEvent(withName: "AudioDevicesChanged", body: "")
                 // },
                 onAccountRegistrationStateChanged: { (core: Core, account: Account, state: RegistrationState, message: String) in
-                    self.sendEvent(withName: "onAccountRegistrationStateChanged", body: ["registrationState": RegisterSipState.allCases[state.rawValue].rawValue, "message": message])
+                    self.sendEvent(withName: "AccountRegistrationStateChanged", body: ["registrationState": RegisterSipState.allCases[state.rawValue].rawValue, "message": message])
                 }
             )
             mCore.addDelegate(delegate: mRegistrationDelegate)
@@ -490,11 +488,11 @@ class Voip24hSdk: RCTEventEmitter {
             // Setting the output audio device to the microphone will redirect the sound to the earpiece.
             if (speakerEnabled && audioDevice.type == AudioDeviceType.Microphone) {
                 mCore.currentCall?.outputAudioDevice = audioDevice
-                isSpeakerEnabled = false
+                // isSpeakerEnabled = false
                 return
             } else if (!speakerEnabled && audioDevice.type == AudioDeviceType.Speaker) {
                 mCore.currentCall?.outputAudioDevice = audioDevice
-                isSpeakerEnabled = true
+                // isSpeakerEnabled = true
                 return
             }
             /* If we wanted to route the audio to a bluetooth headset
@@ -529,6 +527,18 @@ class Voip24hSdk: RCTEventEmitter {
     func getMissedCalls(resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
         resolve(mCore.missedCallsCount)
     }
+    
+    @objc(isMicEnabled:withRejecter:)
+    func isMicEnabled(resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock){
+        resolve(mCore.micEnabled)
+    }
+    
+    @objc(isSpeakerEnabled:withRejecter:)
+    func isSpeakerEnabled(resolve: RCTPromiseResolveBlock, reject: RCTPromiseRejectBlock) {
+        let currentAudioDevice = mCore.currentCall?.outputAudioDevice
+        let speakerEnabled = currentAudioDevice?.type == AudioDeviceType.Speaker
+        resolve(speakerEnabled)
+    }
 }
 
 
@@ -543,4 +553,10 @@ public enum RegisterSipState : String, CaseIterable {
     case Cleared = "Cleared"
     /// Registration failed.
     case Failed = "Failed"
+}
+
+
+public enum CallType: String, CaseIterable {
+    case inbound = "inbound"
+    case outbound = "outbound"
 }
